@@ -18,14 +18,10 @@ class CommandModule
         
     public async Task CreateCommands()
     {
-        var guild = _client.GetGuild(_guildId);
-        var guildCommand = new SlashCommandBuilder();
-        guildCommand.WithName("first-command");
-        guildCommand.WithDescription("This is myfirst command");
-
         var globalCommand = new SlashCommandBuilder();
-        globalCommand.WithName("first-global-command");
-        globalCommand.WithDescription("This is my first global command");
+        globalCommand.WithName("czy-mozna");
+        globalCommand.WithDescription("Czy mozna?");
+        globalCommand.AddOption("zapytanie", ApplicationCommandOptionType.String, "zadaj pytanie", isRequired: true);
 
         var listRoles = new SlashCommandBuilder()
             .WithName("list-roles")
@@ -34,7 +30,6 @@ class CommandModule
             
         try
         {
-            await guild.CreateApplicationCommandAsync(guildCommand.Build());
             await _client.Rest.CreateGuildCommand(listRoles.Build(), _guildId);
             await _client.CreateGlobalApplicationCommandAsync(globalCommand.Build());
         }
@@ -52,9 +47,29 @@ class CommandModule
             case "list-roles":
                 await HandleListRoleCommand(command);
                 break;
-            case "first-global command":
+            case "czy-mozna":
+                await HandleFirstGlobalCommand(command);
                 break;
         }
+    }
+
+    private async Task HandleFirstGlobalCommand(SocketSlashCommand command)
+    {
+        var text = (string)command.Data.Options.First().Value;
+        var response = string.Empty;
+
+        if (text.Contains('?'))
+        {
+            response += "Pytasz czy można " + text + '\n';
+        }
+        else response += "Pytasz czy można " + text + "?\n";
+        
+        
+        
+        FileAttachment attachment =
+            new FileAttachment("/Users/toczekmj/RiderProjects/DiscordBot_tutorial/mozna.mp4", "mozna.mp4");
+
+        await command.RespondWithFileAsync(attachment, response + " @everyone");
     }
 
     private async Task HandleListRoleCommand(SocketSlashCommand command)
