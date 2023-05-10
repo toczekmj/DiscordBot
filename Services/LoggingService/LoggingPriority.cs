@@ -3,7 +3,8 @@ namespace DiscordBot_tutorial.Services.LoggingService;
 public enum LoggingPriority
 {
     Critical,
-    Serious,
+    Warning,
     Low,
     Information,
+    GeneralInformation,
 }
