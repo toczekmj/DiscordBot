@@ -3,7 +3,7 @@ using Discord.Net;
 using Discord.WebSocket;
 using Newtonsoft.Json;
 
-namespace DiscordBot_tutorial;
+namespace DiscordBot_tutorial.Modules;
 
 class CommandModule
 {

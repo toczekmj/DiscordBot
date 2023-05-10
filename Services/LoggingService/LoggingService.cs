@@ -1,10 +1,11 @@
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using DiscordBot_tutorial.Interfaces;
 
-namespace DiscordBot_tutorial;
+namespace DiscordBot_tutorial.Services.LoggingService;
 
-class LoggingService
+class LoggingService : ILoggingService
 {
     public LoggingService(DiscordSocketClient client)
     {
@@ -25,5 +26,10 @@ class LoggingService
         }
 
         return Task.CompletedTask;
+    }
+
+    public void LogLocal(string message, LoggingPriority priority)
+    {
+        Console.WriteLine(message);
     }
 }
