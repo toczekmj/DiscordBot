@@ -1,3 +1,4 @@
+using System.Net.Mime;
 using DiscordBot_tutorial.Interfaces;
 using DiscordBot_tutorial.Services.LoggingService;
 using Newtonsoft.Json;
@@ -8,6 +9,7 @@ public class SettingsService
 {
     public ISettings Settings;
     private readonly ILoggingService _loggingService;
+    
     public SettingsService(ISettings settings, ILoggingService loggingService)
     {
         Settings = settings;
@@ -44,7 +46,7 @@ public class SettingsService
             {
                 _loggingService.LogLocal("Config was not deleted. Please look into the file and try to repair it.", LoggingPriority.Warning);
             }
-            throw;
+            Environment.Exit(0);
         }
     }
 
@@ -64,48 +66,14 @@ public class SettingsService
             _loggingService.LogLocal("Guid: ", LoggingPriority.Information);
             guid = Console.ReadLine();
         } while (string.IsNullOrEmpty(guid));
-
-        _loggingService.LogLocal("Channel rules (ChannelID,CommandName) type x to abort (channel id can be empty when command is channel-independent)", LoggingPriority.Information);
-        var settingsList = ReadChannelsSettings();
-
+        
         var settings = new Settings
         {
             Token = token,
             GuildId = ulong.Parse(guid),
-            ChannelsSettingsList = settingsList,
         };
 
         var serializedSettings = JsonConvert.SerializeObject(settings, Formatting.Indented);
         File.WriteAllText("private.data", serializedSettings);
-    }
-
-    private List<ChannelSettings> ReadChannelsSettings()
-    {
-        var response = Console.ReadLine();
-        var channelsList = new List<ChannelSettings>();
-
-        do
-        {
-            if (response == "x" || string.IsNullOrWhiteSpace(response) || string.IsNullOrWhiteSpace(response))
-                break;
-
-            try
-            {
-                var t = response.Split(',');
-                channelsList.Add(new ChannelSettings
-                {
-                    ChannelId = ulong.Parse(t.First()),
-                    CommandName = t.Last().Trim(),
-                });
-            }
-            catch (Exception e)
-            {
-                _loggingService.LogLocal("Provided data was not correct.", LoggingPriority.Information);
-            }
-
-            response = Console.ReadLine();
-        } while (response != "x");
-
-        return channelsList;
     }
 }

@@ -6,5 +6,4 @@ public interface ISettings
 {
     public string? Token { get; set; }
     public ulong GuildId { get; set; }
-    public List<ChannelSettings>? ChannelsSettingsList { get; set; }
 }

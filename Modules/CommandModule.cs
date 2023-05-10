@@ -1,88 +1,95 @@
+using System.Reflection;
 using Discord;
+using Discord.Interactions;
 using Discord.Net;
 using Discord.WebSocket;
+using DiscordBot_tutorial.Interfaces;
+using DiscordBot_tutorial.Services.LoggingService;
+using DiscordBot_tutorial.Services.SettingsService;
 using Newtonsoft.Json;
 
 namespace DiscordBot_tutorial.Modules;
 
-class CommandModule
+partial class CommandModule
 {
     private readonly DiscordSocketClient _client;
-    private readonly ulong _guildId;
-        
-    public CommandModule(DiscordSocketClient client, ulong guildId)
+    private readonly SettingsService _settingsService;
+    private readonly ILoggingService _loggingService;
+    private List<ICommand> _commands = new();
+
+    public CommandModule(DiscordSocketClient client, SettingsService settingsService, ILoggingService loggingService)
     {
-        _guildId = guildId;
         _client = client;
+        _settingsService = settingsService;
+        _loggingService = loggingService;
     }
-        
+
+    //TODO: make commands creation dynamic using reflections and load data from JSON file
+    //seems like whole assembly creator needs to be done for this, but not sure
     public async Task CreateCommands()
     {
-        var globalCommand = new SlashCommandBuilder();
-        globalCommand.WithName("czy-mozna");
-        globalCommand.WithDescription("Czy mozna?");
-        globalCommand.AddOption("zapytanie", ApplicationCommandOptionType.String, "zadaj pytanie", isRequired: true);
+        var cmd1 = new Command
+        {
+            cmd = CreateCommand("papiez", "this is a test command description", "askemeanything",
+                ApplicationCommandOptionType.String, "provide text here"),
+            HandlerName = "PapiezCommandHandler",
+            IsGlobal = false,
+        };
 
-        var listRoles = new SlashCommandBuilder()
-            .WithName("list-roles")
-            .WithDescription("List all roles of an user.")
-            .AddOption("user", ApplicationCommandOptionType.User, "The users whos roles you want to be listed", isRequired: true);
-            
+        var cmd2 = new Command
+        {
+            cmd = CreateCommand("testsecondcommand", "this is a second command description", "ask",
+                ApplicationCommandOptionType.String, "text here", true),
+            HandlerName = "SecondCommandHandler",
+            IsGlobal = false,
+        };
+        
+        _commands.Add(cmd1); 
+        _commands.Add(cmd2); 
+        
+        await BuildCommands();
+    }
+
+    public async Task SlashCommandHandler(SocketSlashCommand command)
+    {
+        var cmd = _commands.Find(x => x.cmd.Name == command.Data.Name);
+        var t = new object?[1];
+        t[0] = command;
+        var method = this.GetType().GetMethod(cmd!.HandlerName, BindingFlags.NonPublic | BindingFlags.Instance);
+        var task = (Task)method.Invoke(this, t);
+        await task.ConfigureAwait(false);
+    }
+    private async Task BuildCommands()
+    {
+        var guild = _client.GetGuild(_settingsService.Settings.GuildId);
         try
         {
-            await _client.Rest.CreateGuildCommand(listRoles.Build(), _guildId);
-            await _client.CreateGlobalApplicationCommandAsync(globalCommand.Build());
+            foreach (var command in _commands)
+            {
+                if (command.IsGlobal)
+                    await _client.CreateGlobalApplicationCommandAsync(command.cmd.Build());
+                else
+                {
+                    await guild.CreateApplicationCommandAsync(command.cmd.Build());
+                }
+            }
         }
         catch (HttpException e)
         {
-            var json = JsonConvert.SerializeObject(e.Errors, Formatting.Indented);
-            Console.WriteLine(json);
-        }
-    }
-    
-    public async Task SlashCommandHandler(SocketSlashCommand command)
-    {
-        switch (command.Data.Name)
-        {
-            case "list-roles":
-                await HandleListRoleCommand(command);
-                break;
-            case "czy-mozna":
-                await HandleFirstGlobalCommand(command);
-                break;
+            var text = JsonConvert.SerializeObject(e.Errors, Formatting.Indented);
+            _loggingService.LogLocal(text, LoggingPriority.Critical);
         }
     }
 
-    private async Task HandleFirstGlobalCommand(SocketSlashCommand command)
+    private SlashCommandBuilder CreateCommand(string name, string desc, string? optionName = null, ApplicationCommandOptionType? optionType = null, string? optionDesc = null, bool? isRequired = null)
     {
-        var text = (string)command.Data.Options.First().Value;
-        var response = string.Empty;
+        var command = new SlashCommandBuilder()
+            .WithName(name)
+            .WithDescription(desc);
 
-        if (text.Contains('?'))
-        {
-            response += "Pytasz czy można " + text + '\n';
-        }
-        else response += "Pytasz czy można " + text + "?\n";
-        
-        
-        
-        FileAttachment attachment =
-            new FileAttachment("/Users/toczekmj/RiderProjects/DiscordBot_tutorial/mozna.mp4", "mozna.mp4");
+        if (optionName is not null && optionType is not null && optionDesc is not null)
+            command.AddOption(optionName, (ApplicationCommandOptionType)optionType, optionDesc, isRequired: isRequired);
 
-        await command.RespondWithFileAsync(attachment, response + " @everyone");
-    }
-
-    private async Task HandleListRoleCommand(SocketSlashCommand command)
-    {
-        var guildUser = (SocketGuildUser)command.Data.Options.First().Value;
-        var roleList = string.Join("\n", guildUser.Roles.Where(x => !x.IsEveryone).Select(x => x.Mention));
-        var embedBuilder = new EmbedBuilder()
-            .WithAuthor(guildUser.ToString(), guildUser.GetAvatarUrl() ?? guildUser.GetDefaultAvatarUrl())
-            .WithTitle("Roles")
-            .WithDescription(roleList)
-            .WithColor(Color.Green)
-            .WithCurrentTimestamp();
-        await command.RespondAsync(embed: embedBuilder.Build(), ephemeral: true);
-
+        return command;
     }
 }
