@@ -1,58 +1,53 @@
 ﻿using Discord;
-using Discord.Commands;
 using Discord.WebSocket;
+using DiscordBot_tutorial.Interfaces;
+using DiscordBot_tutorial.Modules;
+using DiscordBot_tutorial.Services;
+using DiscordBot_tutorial.Services.LoggingService;
+using DiscordBot_tutorial.Services.SettingsService;
 
 namespace DiscordBot_tutorial
 {
     class Program
     {
         private DiscordSocketClient? _client;
-        private LoggingService? _loggingService;
+        private ILoggingService? _loggingService;
         private CommandModule? _commandModule;
-        private ulong _guildId;
+        private SettingsService? _settingsService;
 
         public static async Task Main(string[] args) => await new Program().MainAsync(args);
 
         private async Task MainAsync(string[] args)
         {
-            DiscordSocketConfig config = new DiscordSocketConfig()
-            {
-                UseInteractionSnowflakeDate = false,
-            };
-
+            //create client 
+            _client = new DiscordSocketClient(new DiscordSocketConfig
+                {
+                    UseInteractionSnowflakeDate = false,
+                });
             
-            if (!File.Exists("private.data"))
-            {
-
-                Console.WriteLine("Token: ");
-                var response = Console.ReadLine();
-                Console.WriteLine("Guid: ");
-                var response2 = Console.ReadLine();
-                
-                File.WriteAllText("private.data", response + ",\n" + response2);
-            }
-
-            var text = File.ReadAllText("private.data").Split(',');
-            var token = text[0];
-
-            _guildId = ulong.Parse(text[1]);
-            _client = new DiscordSocketClient(config);
+            //configure services
             _loggingService = new LoggingService(_client);
-            _commandModule = new CommandModule(_client, _guildId);
-
+            _settingsService = new SettingsService(new Settings(), _loggingService);
+            _settingsService.LoadSettings();
+            
+            //configure modules
+            _commandModule = new CommandModule(_client, _settingsService.Settings.GuildId);
             _client.Log += _loggingService.LogAsync;
             _client.SlashCommandExecuted += _commandModule.SlashCommandHandler;
             
-            await _client.LoginAsync(TokenType.Bot, token);
+            //start client
+            await _client.LoginAsync(TokenType.Bot, _settingsService.Settings.Token);
             await _client.StartAsync();
             
-            if(args.Length > 0 && args[0] == "-ci")
-            {
-                Console.WriteLine("Creating server commands, please keep in mind, that it may take up to 1 hour for server to apply changes.");
-                _client.Ready += _commandModule.CreateCommands;
-            }
             
-            
+            //
+            // if(args.Length > 0 && args[0] == "-ci")
+            // {
+            //     Console.WriteLine("Creating server commands, please keep in mind, that it may take up to 1 hour for server to apply changes.");
+            //     _client.Ready += _commandModule.CreateCommands;
+            // }
+            //
+            //
             await Task.Delay(-1);
         }
 
