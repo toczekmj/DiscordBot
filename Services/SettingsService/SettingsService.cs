@@ -17,8 +17,8 @@ public class SettingsService
     public void LoadSettings()
     {
         if (!File.Exists("private.data"))
-            CreateFile();
-        else ReadSettingsFromFile();
+            CreateFile(); 
+        ReadSettingsFromFile();
     }
 
     private void ReadSettingsFromFile()
@@ -42,7 +42,7 @@ public class SettingsService
             }
             else
             {
-                _loggingService.LogLocal("Config was not deleted. Please look into the file and try to repair it.", LoggingPriority.Serious);
+                _loggingService.LogLocal("Config was not deleted. Please look into the file and try to repair it.", LoggingPriority.Warning);
             }
             throw;
         }
