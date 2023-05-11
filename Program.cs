@@ -3,9 +3,12 @@ using System.Reflection.Emit;
 using Discord;
 using Discord.WebSocket;
 using DiscordBot_tutorial.Interfaces;
+using DiscordBot_tutorial.Jobs;
 using DiscordBot_tutorial.Modules;
 using DiscordBot_tutorial.Services.LoggingService;
 using DiscordBot_tutorial.Services.SettingsService;
+using Quartz;
+using Quartz.Impl;
 
 namespace DiscordBot_tutorial
 {
@@ -25,14 +28,14 @@ namespace DiscordBot_tutorial
                 new DiscordSocketConfig
                 {
                     UseInteractionSnowflakeDate = false,
-                    //GatewayIntents = GatewayIntents.None,
                 }
             );
-            
+
             //configure services
             _loggingService = new LoggingService(_client);
             _settingsService = new SettingsService(new Settings(), _loggingService);
             _settingsService.LoadSettings();
+            await ConfigureScheduler(_client, _settingsService);
             
             //configure modules
             _commandModule = new CommandModule(_client, _settingsService, _loggingService);
@@ -52,6 +55,32 @@ namespace DiscordBot_tutorial
 
             //prevent closing the client 
             await Task.Delay(-1);
+        }
+
+        private async Task ConfigureScheduler(IAsyncDisposable client, SettingsService settings)
+        {
+            var factory = new StdSchedulerFactory();
+            var scheduler = await factory.GetScheduler();
+            
+            await scheduler.Start();
+            
+            var job = JobBuilder.Create<Job2137>()
+                .WithIdentity("job1", "group1")
+                .Build();
+
+            job.JobDataMap.Put("_client", client);
+            job.JobDataMap.Put("_settings", settings);
+            
+            var trigger = TriggerBuilder.Create()
+                .WithIdentity("trigger1", "group1")
+                .StartNow()
+                .WithSimpleSchedule(x => x
+                    .WithIntervalInSeconds(1)
+                    .RepeatForever()
+                )
+                .Build();
+            
+            await scheduler.ScheduleJob(job, trigger);
         }
     }
 }
