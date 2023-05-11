@@ -1,13 +1,12 @@
-using System.Net.Mime;
 using DiscordBot_tutorial.Interfaces;
 using DiscordBot_tutorial.Services.LoggingService;
 using Newtonsoft.Json;
 
 namespace DiscordBot_tutorial.Services.SettingsService;
 
-public class SettingsService
+public class SettingsService : ISettingsService
 {
-    public ISettings Settings;
+    public ISettings Settings { get; set; }
     private readonly ILoggingService _loggingService;
     
     public SettingsService(ISettings settings, ILoggingService loggingService)
@@ -28,10 +27,10 @@ public class SettingsService
         var text = File.ReadAllText("private.data");
         try
         {
-            Settings = JsonConvert.DeserializeObject<Settings>(text);
+            Settings = JsonConvert.DeserializeObject<Settings>(text)!;
             _loggingService.LogLocal("Settings loaded!", LoggingPriority.Information);
         }
-        catch (Exception e)
+        catch (Exception)
         {
             _loggingService.LogLocal("Failed to read settings from file. Seems like it may be corrupted. Do you wand to delete configuration file? (y/N)", LoggingPriority.Critical);
             var response = Console.ReadLine();

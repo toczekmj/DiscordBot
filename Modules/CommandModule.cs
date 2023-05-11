@@ -1,23 +1,23 @@
 using System.Reflection;
 using Discord;
-using Discord.Interactions;
 using Discord.Net;
 using Discord.WebSocket;
 using DiscordBot_tutorial.Interfaces;
 using DiscordBot_tutorial.Services.LoggingService;
-using DiscordBot_tutorial.Services.SettingsService;
 using Newtonsoft.Json;
 
 namespace DiscordBot_tutorial.Modules;
 
-partial class CommandModule
+
+
+partial class CommandModule : ICommandModule
 {
     private readonly DiscordSocketClient _client;
-    private readonly SettingsService _settingsService;
+    private readonly ISettingsService _settingsService;
     private readonly ILoggingService _loggingService;
-    private List<ICommand> _commands = new();
+    private readonly List<ICommand> _commands = new();
 
-    public CommandModule(DiscordSocketClient client, SettingsService settingsService, ILoggingService loggingService)
+    public CommandModule(DiscordSocketClient client, ISettingsService settingsService, ILoggingService loggingService)
     {
         _client = client;
         _settingsService = settingsService;
@@ -32,7 +32,7 @@ partial class CommandModule
         {
             cmd = CreateCommand("papiez", "this is a test command description", "askemeanything",
                 ApplicationCommandOptionType.String, "provide text here"),
-            HandlerName = "PapiezCommandHandler",
+            HandlerName = "PapiezCommandHandler1",
             IsGlobal = false,
         };
 
@@ -52,11 +52,11 @@ partial class CommandModule
 
     public async Task SlashCommandHandler(SocketSlashCommand command)
     {
-        var cmd = _commands.Find(x => x.cmd.Name == command.Data.Name);
+        var cmd = _commands.Find(x => x.cmd!.Name == command.Data.Name);
         var t = new object?[1];
         t[0] = command;
-        var method = this.GetType().GetMethod(cmd!.HandlerName, BindingFlags.NonPublic | BindingFlags.Instance);
-        var task = (Task)method.Invoke(this, t);
+        var method = this.GetType().GetMethod(cmd!.HandlerName!, BindingFlags.NonPublic | BindingFlags.Instance);
+        var task = (Task)method!.Invoke(this, t)!;
         await task.ConfigureAwait(false);
     }
     private async Task BuildCommands()
@@ -67,10 +67,10 @@ partial class CommandModule
             foreach (var command in _commands)
             {
                 if (command.IsGlobal)
-                    await _client.CreateGlobalApplicationCommandAsync(command.cmd.Build());
+                    await _client.CreateGlobalApplicationCommandAsync(command.cmd!.Build());
                 else
                 {
-                    await guild.CreateApplicationCommandAsync(command.cmd.Build());
+                    await guild.CreateApplicationCommandAsync(command.cmd!.Build());
                 }
             }
         }
