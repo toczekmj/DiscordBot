@@ -3,8 +3,9 @@ using System.Reflection.Emit;
 using Discord;
 using Discord.WebSocket;
 using DiscordBot_tutorial.Interfaces;
-using DiscordBot_tutorial.Jobs;
 using DiscordBot_tutorial.Modules;
+using DiscordBot_tutorial.Quartz.Jobs;
+using DiscordBot_tutorial.Quartz.Schedulers;
 using DiscordBot_tutorial.Services.LoggingService;
 using DiscordBot_tutorial.Services.SettingsService;
 using Quartz;
@@ -16,8 +17,9 @@ namespace DiscordBot_tutorial
     {
         private DiscordSocketClient? _client;
         private ILoggingService? _loggingService;
-        private CommandModule? _commandModule;
-        private SettingsService? _settingsService;
+        private ICommandModule? _commandModule;
+        private ISettingsService? _settingsService;
+        private SchedulerManager? _schedulerManager;
         
         public static async Task Main(string[] args) => await new Program().MainAsync(args);
 
@@ -35,12 +37,15 @@ namespace DiscordBot_tutorial
             _loggingService = new LoggingService(_client);
             _settingsService = new SettingsService(new Settings(), _loggingService);
             _settingsService.LoadSettings();
-            await ConfigureScheduler(_client, _settingsService);
-            
+            _schedulerManager = new SchedulerManager(_client, _settingsService);
+
             //configure modules
             _commandModule = new CommandModule(_client, _settingsService, _loggingService);
             _client.Log += _loggingService.LogAsync;
             _client.SlashCommandExecuted += _commandModule.SlashCommandHandler;
+
+            //configure jobs and triggers
+            await _schedulerManager.ConfigureJob2137();
 
             //start client
             await _client.LoginAsync(TokenType.Bot, _settingsService.Settings.Token);
@@ -55,32 +60,6 @@ namespace DiscordBot_tutorial
 
             //prevent closing the client 
             await Task.Delay(-1);
-        }
-
-        private async Task ConfigureScheduler(IAsyncDisposable client, SettingsService settings)
-        {
-            var factory = new StdSchedulerFactory();
-            var scheduler = await factory.GetScheduler();
-            
-            await scheduler.Start();
-            
-            var job = JobBuilder.Create<Job2137>()
-                .WithIdentity("job1", "group1")
-                .Build();
-
-            job.JobDataMap.Put("_client", client);
-            job.JobDataMap.Put("_settings", settings);
-            
-            var trigger = TriggerBuilder.Create()
-                .WithIdentity("trigger1", "group1")
-                .StartNow()
-                .WithSimpleSchedule(x => x
-                    .WithIntervalInSeconds(1)
-                    .RepeatForever()
-                )
-                .Build();
-            
-            await scheduler.ScheduleJob(job, trigger);
         }
     }
 }

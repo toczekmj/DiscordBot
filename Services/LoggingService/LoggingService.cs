@@ -24,7 +24,9 @@ internal class LoggingService : ILoggingService
         }
         else
         {
-            ChangeTextColour(message.Severity == LogSeverity.Warning
+            if(message.Message.Contains("unhandled exception"))
+                ChangeTextColour(LoggingPriority.Critical);
+            else ChangeTextColour(message.Severity == LogSeverity.Warning
                 ? LoggingPriority.Warning
                 : LoggingPriority.GeneralInformation);
             Console.WriteLine($"[General/{message.Severity}] {message}");
