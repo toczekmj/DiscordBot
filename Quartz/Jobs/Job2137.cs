@@ -2,7 +2,7 @@ using Discord.WebSocket;
 using DiscordBot_tutorial.Services.SettingsService;
 using Quartz;
 
-namespace DiscordBot_tutorial.Jobs;
+namespace DiscordBot_tutorial.Quartz.Jobs;
 
 public class Job2137 : IJob
 {
@@ -16,11 +16,11 @@ public class Job2137 : IJob
         
         if(DateTime.Now.ToShortTimeString() == "21:37" && !flag)
         {
-            var channel = client.GetGuild(settings.Settings.GuildId)
+            var channel = client
+                .GetGuild(settings.Settings.GuildId)
                 .GetTextChannel(1105183278266331156);
      
-            await channel.SendFileAsync("/Users/toczekmj/RiderProjects/DiscordBot/mozna.mp4",
-                "Jak najbardziej");
+            await channel.SendFileAsync("/Users/toczekmj/RiderProjects/DiscordBot/mozna.mp4","Jak najbardziej");
             await channel.SendMessageAsync("Jeszcze jak");
             
             flag = true;
