@@ -8,9 +8,7 @@ using Newtonsoft.Json;
 
 namespace DiscordBot_tutorial.Modules;
 
-
-
-partial class CommandModule : ICommandModule
+class CommandModule : ICommandModule
 {
     private readonly DiscordSocketClient _client;
     private readonly ISettingsService _settingsService;
@@ -43,22 +41,25 @@ partial class CommandModule : ICommandModule
             HandlerName = "SecondCommandHandler",
             IsGlobal = false,
         };
-        
-        _commands.Add(cmd1); 
-        _commands.Add(cmd2); 
-        
+
+        _commands.Add(cmd1);
+        _commands.Add(cmd2);
+
         await BuildCommands();
     }
 
     public async Task SlashCommandHandler(SocketSlashCommand command)
     {
         var cmd = _commands.Find(x => x.cmd!.Name == command.Data.Name);
+        var commandHandler = new CommandHandlerModule(_client, _settingsService);
         var t = new object?[1];
+        var method = commandHandler.GetType()
+            .GetMethod(cmd!.HandlerName!, BindingFlags.NonPublic | BindingFlags.Instance);
         t[0] = command;
-        var method = this.GetType().GetMethod(cmd!.HandlerName!, BindingFlags.NonPublic | BindingFlags.Instance);
-        var task = (Task)method!.Invoke(this, t)!;
+        var task = (Task)method!.Invoke(commandHandler, t)!;
         await task.ConfigureAwait(false);
     }
+
     private async Task BuildCommands()
     {
         var guild = _client.GetGuild(_settingsService.Settings.GuildId);
@@ -81,7 +82,8 @@ partial class CommandModule : ICommandModule
         }
     }
 
-    private SlashCommandBuilder CreateCommand(string name, string desc, string? optionName = null, ApplicationCommandOptionType? optionType = null, string? optionDesc = null, bool? isRequired = null)
+    private SlashCommandBuilder CreateCommand(string name, string desc, string? optionName = null,
+        ApplicationCommandOptionType? optionType = null, string? optionDesc = null, bool? isRequired = null)
     {
         var command = new SlashCommandBuilder()
             .WithName(name)

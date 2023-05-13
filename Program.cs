@@ -1,15 +1,10 @@
-﻿using System.Reflection;
-using System.Reflection.Emit;
-using Discord;
+﻿using Discord;
 using Discord.WebSocket;
 using DiscordBot_tutorial.Interfaces;
 using DiscordBot_tutorial.Modules;
-using DiscordBot_tutorial.Quartz.Jobs;
 using DiscordBot_tutorial.Quartz.Schedulers;
 using DiscordBot_tutorial.Services.LoggingService;
 using DiscordBot_tutorial.Services.SettingsService;
-using Quartz;
-using Quartz.Impl;
 
 namespace DiscordBot_tutorial
 {
@@ -20,7 +15,7 @@ namespace DiscordBot_tutorial
         private ICommandModule? _commandModule;
         private ISettingsService? _settingsService;
         private SchedulerManager? _schedulerManager;
-        
+
         public static async Task Main(string[] args) => await new Program().MainAsync(args);
 
         private async Task MainAsync(string[] args)
@@ -52,9 +47,11 @@ namespace DiscordBot_tutorial
             await _client.StartAsync();
 
             //create commands for clean installation 
-            if(args.Length > 0 && args[0] == "-ci")
+            if (args.Length > 0 && args[0] == "-ci")
             {
-                _loggingService.LogLocal("Creating server commands, please keep in mind, that it may take up to 1 hour for server to apply changes.", LoggingPriority.Low);
+                _loggingService.LogLocal(
+                    "Creating server commands, please keep in mind, that it may take up to 1 hour for server to apply changes.",
+                    LoggingPriority.Low);
                 _client.Ready += _commandModule.CreateCommands;
             }
 
