@@ -24,6 +24,7 @@ class CommandModule : ICommandModule
 
     //TODO: make commands creation dynamic using reflections and load data from JSON file
     //seems like whole assembly creator needs to be done for this, but not sure
+    //edit : use ExpandoObject instead
     public async Task CreateCommands()
     {
         var cmd1 = new Command
