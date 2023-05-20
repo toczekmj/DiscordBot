@@ -1,10 +1,13 @@
-﻿using Discord;
+﻿using System.Net.Mime;
+using System.Security;
+using Discord;
 using Discord.WebSocket;
 using DiscordBot_tutorial.Interfaces;
 using DiscordBot_tutorial.Modules;
 using DiscordBot_tutorial.Quartz.Schedulers;
 using DiscordBot_tutorial.Services.LoggingService;
 using DiscordBot_tutorial.Services.SettingsService;
+using Newtonsoft.Json;
 
 namespace DiscordBot_tutorial
 {
@@ -16,7 +19,8 @@ namespace DiscordBot_tutorial
         private ISettingsService? _settingsService;
         private SchedulerManager? _schedulerManager;
 
-        public static async Task Main(string[] args) => await new Program().MainAsync(args);
+        public static async Task Main(string[] args) 
+            => await new Program().MainAsync(args);
 
         private async Task MainAsync(string[] args)
         {

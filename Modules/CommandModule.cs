@@ -1,4 +1,6 @@
+using System.Dynamic;
 using System.Reflection;
+using System.Reflection.Emit;
 using Discord;
 using Discord.Net;
 using Discord.WebSocket;
@@ -22,29 +24,19 @@ class CommandModule : ICommandModule
         _loggingService = loggingService;
     }
 
-    //TODO: make commands creation dynamic using reflections and load data from JSON file
-    //seems like whole assembly creator needs to be done for this, but not sure
-    //edit : use ExpandoObject instead
+    //TODO: handle handlers dynamic addition
     public async Task CreateCommands()
     {
-        var cmd1 = new Command
+        foreach (var jsonCommand in _settingsService.Settings.Commands)
         {
-            cmd = CreateCommand("papiez", "this is a test command description", "askemeanything",
-                ApplicationCommandOptionType.String, "provide text here"),
-            HandlerName = "PapiezCommandHandler1",
-            IsGlobal = false,
-        };
-
-        var cmd2 = new Command
-        {
-            cmd = CreateCommand("testsecondcommand", "this is a second command description", "ask",
-                ApplicationCommandOptionType.String, "text here", true),
-            HandlerName = "SecondCommandHandler",
-            IsGlobal = false,
-        };
-
-        _commands.Add(cmd1);
-        _commands.Add(cmd2);
+            _commands.Add(new Command
+                {
+                    cmd = CreateCommand(jsonCommand.Name, jsonCommand.Desc, jsonCommand.OptionName,
+                        jsonCommand.OptionType, jsonCommand.OptionDesc, jsonCommand.IsRequired),
+                    HandlerName = jsonCommand.HandlerName,
+                    IsGlobal = jsonCommand.IsGlobal,
+                });
+        }
 
         await BuildCommands();
     }

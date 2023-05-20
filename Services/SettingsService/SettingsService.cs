@@ -22,6 +22,7 @@ public class SettingsService : ISettingsService
         ReadSettingsFromFile();
     }
 
+    //TODO: read IJsonCommands from file 
     private void ReadSettingsFromFile()
     {
         var text = File.ReadAllText("private.data");
@@ -49,6 +50,7 @@ public class SettingsService : ISettingsService
         }
     }
 
+    //TODO: update CreateFile to handle new commands builder and handler
     private void CreateFile()
     {
         string? token;
@@ -70,6 +72,7 @@ public class SettingsService : ISettingsService
         {
             Token = token,
             GuildId = ulong.Parse(guid),
+            //TODO: add List<IJsonCommand> here 
         };
 
         var serializedSettings = JsonConvert.SerializeObject(settings, Formatting.Indented);

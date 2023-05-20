@@ -6,4 +6,5 @@ public interface ISettings
 {
     public string? Token { get; set; }
     public ulong GuildId { get; set; }
+    public List<JsonCommand> Commands { get; set; }
 }
