@@ -1,13 +1,10 @@
-﻿using System.Net.Mime;
-using System.Security;
-using Discord;
+﻿using Discord;
 using Discord.WebSocket;
 using DiscordBot_tutorial.Interfaces;
 using DiscordBot_tutorial.Modules;
 using DiscordBot_tutorial.Quartz.Schedulers;
 using DiscordBot_tutorial.Services.LoggingService;
 using DiscordBot_tutorial.Services.SettingsService;
-using Newtonsoft.Json;
 
 namespace DiscordBot_tutorial
 {

@@ -1,6 +1,4 @@
-using System.Dynamic;
 using System.Reflection;
-using System.Reflection.Emit;
 using Discord;
 using Discord.Net;
 using Discord.WebSocket;
@@ -25,6 +23,7 @@ class CommandModule : ICommandModule
     }
 
     //TODO: handle handlers dynamic addition
+    //TODO: create multiple options
     public async Task CreateCommands()
     {
         foreach (var jsonCommand in _settingsService.Settings.Commands)
@@ -45,11 +44,9 @@ class CommandModule : ICommandModule
     {
         var cmd = _commands.Find(x => x.cmd!.Name == command.Data.Name);
         var commandHandler = new CommandHandlerModule(_client, _settingsService);
-        var t = new object?[1];
         var method = commandHandler.GetType()
             .GetMethod(cmd!.HandlerName!, BindingFlags.NonPublic | BindingFlags.Instance);
-        t[0] = command;
-        var task = (Task)method!.Invoke(commandHandler, t)!;
+        var task = (Task)method!.Invoke(commandHandler, new object?[]{command})!;
         await task.ConfigureAwait(false);
     }
 
