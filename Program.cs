@@ -1,8 +1,10 @@
-﻿using Discord;
+﻿using System.CodeDom;
+using Discord;
 using Discord.WebSocket;
 using DiscordBot_tutorial.Interfaces;
 using DiscordBot_tutorial.Modules;
 using DiscordBot_tutorial.Quartz.Schedulers;
+using DiscordBot_tutorial.Services.CommandService;
 using DiscordBot_tutorial.Services.LoggingService;
 using DiscordBot_tutorial.Services.SettingsService;
 
@@ -16,11 +18,37 @@ namespace DiscordBot_tutorial
         private ISettingsService? _settingsService;
         private SchedulerManager? _schedulerManager;
 
-        public static async Task Main(string[] args) 
+        public static async Task Main(string[] args)
             => await new Program().MainAsync(args);
 
         private async Task MainAsync(string[] args)
         {
+
+            var compileUnit = new CodeCompileUnit();
+            var domNamespace = new CodeNamespace("CodeDomSampleNS");
+            var firstImport = new CodeNamespaceImport("System");
+            domNamespace.Imports.Add(firstImport);
+            var newType = new CodeTypeDeclaration("CodeDomSample") { Attributes = MemberAttributes.Public };
+            var mainMethod = new CodeEntryPointMethod();
+            var mainexp1 = new CodeMethodInvokeExpression(
+                new CodeTypeReferenceExpression("System.Console"),
+                "WriteLine", new CodePrimitiveExpression("Inside Main ..."));
+            mainMethod.Statements.Add(mainexp1);
+            var constructor = new CodeConstructor() { Attributes = MemberAttributes.Public };
+            var constructorExpresson = new CodeMethodInvokeExpression(new CodeTypeReferenceExpression("System.Console"),
+                "Writeline", new CodePrimitiveExpression("Inside codedom constructor"));
+            constructor.Statements.Add(constructorExpresson);
+            newType.Members.Add(constructor);
+            newType.Members.Add(mainMethod);
+            domNamespace.Types.Add(newType);
+            compileUnit.Namespaces.Add(domNamespace);
+
+            var output = CommandHandlerModule.GenerateCSharpCode(compileUnit);
+            Console.WriteLine(output);
+            var generate = CommandHandlerModule.CompileCSharpCode(output, $"{output}.dll");
+            Console.WriteLine("Generate: " + generate);
+            
+            return;
             //create client 
             _client = new DiscordSocketClient(
                 new DiscordSocketConfig
@@ -34,7 +62,7 @@ namespace DiscordBot_tutorial
             _settingsService = new SettingsService(new Settings(), _loggingService);
             _settingsService.LoadSettings();
             _schedulerManager = new SchedulerManager(_client, _settingsService);
-
+            
             //configure modules
             _commandModule = new CommandModule(_client, _settingsService, _loggingService);
             _client.Log += _loggingService.LogAsync;
